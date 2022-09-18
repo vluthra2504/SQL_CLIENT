@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: sqlclient
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+      - ./zseed.sql:/docker-entrypoint-initdb.d/zseed.sql
+    expose:
+      - "5433" # Publishes 5433 to other containers but NOT to host machine
+    ports:
+      - "5433:5433"
+  server:
+    env_file: "./server/.env.dev"
+    build:
+      context: ./server
+      dockerfile: ./Dockerfile
+    image: "sql-server"
+    depends_on:
+      - postgres
+    ports:
+      - "5000:5000"
+  client:
+    build:
+      context: ./client
+      dockerfile: ./Dockerfile
+    image: "sql-frontend"
+    depends_on:
+      - server
+    ports:
+      - "3000:3000"
+    links:
+      - "server:be"
